@@ -1,0 +1,56 @@
+[ {
+  "queryId" : "q1",
+  "model" : "phi3:mini",
+  "queryText" : "How many vacation days do employees get?",
+  "answer" : null,
+  "latencyMs" : 30086,
+  "inputTokens" : 0,
+  "outputTokens" : 0,
+  "success" : false,
+  "errorMessage" : "request timed out",
+  "timestamp" : 1766309865279
+}, {
+  "queryId" : "q2",
+  "model" : "phi3:mini",
+  "queryText" : "What is the process for requesting time off?",
+  "answer" : null,
+  "latencyMs" : 30002,
+  "inputTokens" : 0,
+  "outputTokens" : 0,
+  "success" : false,
+  "errorMessage" : "request timed out",
+  "timestamp" : 1766309895281
+}, {
+  "queryId" : "q3",
+  "model" : "phi3:mini",
+  "queryText" : "Can unused vacation days be carried over?",
+  "answer" : "No, typically excess vacation time cannot be rolled over to the next year according to standard corporate policies; it is usually paid out in cash when an employee leaves the company or if no use was made before a specified deadline.",
+  "latencyMs" : 11395,
+  "inputTokens" : 31,
+  "outputTokens" : 58,
+  "success" : true,
+  "errorMessage" : null,
+  "timestamp" : 1766309906678
+}, {
+  "queryId" : "q4",
+  "model" : "phi3:mini",
+  "queryText" : "Compare vacation policies for full-time vs part-time employees",
+  "answer" : "Full-time employees are typically entitled to a standard number of paid leave days, while the allocation may be prorated or unpaid for part-time staff based on their work hours. Some companies offer additional vacation accruals per hour worked over a certain threshold exclusively to full-timers.",
+  "latencyMs" : 14018,
+  "inputTokens" : 36,
+  "outputTokens" : 74,
+  "success" : true,
+  "errorMessage" : null,
+  "timestamp" : 1766309920696
+}, {
+  "queryId" : "q5",
+  "model" : "phi3:mini",
+  "queryText" : "Summarize the entire vacation policy",
+  "answer" : null,
+  "latencyMs" : 30019,
+  "inputTokens" : 0,
+  "outputTokens" : 0,
+  "success" : false,
+  "errorMessage" : "request timed out",
+  "timestamp" : 1766309950723
+} ]

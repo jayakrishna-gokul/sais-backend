@@ -1,0 +1,247 @@
+TEST 1 RESULTS:
+MetricResultNotesUpload❌ FailedCorrupted PDF rejected correctlyError Message❌ Generic UI errorBackend has detailed error but UI shows generic messageDatabase Cleanup⚠️ PartialDocument record left with status=FAILEDChunks Created✅ None (0)Good - no orphaned chunksVectors Created✅ NoneGood - no orphaned vectorsSystem Stable✅ YesSystem still responsive
+
+BUGS FOUND:
+
+NullPointerException in cleanup - chunks is null when extraction fails
+Orphaned FAILED document - Should be deleted, not left in database
+Generic UI error - User sees "try again later" instead of "corrupted PDF"
+
+TEST 2 RESULTS:
+MetricResultNotesUpload❌ FailedEmpty file rejectedError Message❌ Generic"Vector indexing failed" not helpfulDatabase Cleanup❌ OrphanedDocument left with status=FAILEDChunks Created✅ None (0)Correctly extracted 0 chunksVectors Created✅ NoneQdrant rejected empty requestSystem Stable✅ YesStill responsive
+
+CRITICAL BUGS SUMMARY SO FAR:
+Bug #1: NullPointerException in cleanup
+
+When PDF extraction fails, cleanup crashes
+Leaves orphaned FAILED documents
+
+Bug #2: Empty file validation missing
+
+System should reject empty files BEFORE processing
+Currently processes, then crashes on Qdrant indexing
+
+Bug #3: Generic error messages
+
+User sees "try again later"
+Should see "File is empty" or "File is corrupted"
+
+Bug #4: No cleanup of FAILED documents
+
+Database accumulates FAILED records
+Should auto-delete or provide admin cleanup tool
+
+
+CHAOS TESTING SUMMARY - PHASE 1 COMPLETE
+Tests Completed:
+TestFileResultNotes1corrupted.pdf✅
+RejectedUser-friendly error2empty.txt✅ Rejected"File is empty"3unicode-中文-🎉.txt✅ AcceptedUnicode handled correctly4longname.txt (200 chars content)✅ AcceptedConfused test - was content not filename4blongname...aaa.txt (189 char filename)✅ AcceptedAfter fixing file_path limit5my file & name (test) [2026].txt✅ AcceptedSpecial chars work6massive-100mb.bin⚠️ TimeoutHardware limitation (VM)7borderline-99mb.pdf⚠️ Timeout50K chunks created, timed out8fake.pdf✅ RejectedInvalid PDF detected9fake.docx✅ RejectedInvalid file detected
+
+Bugs Fixed:
+
+✅ Empty file validation
+✅ Corrupted PDF handling
+✅ NullPointerException in cleanup
+✅ Failed documents deleted (no orphans)
+✅ UI shows actual errors
+✅ Filename length validation (218 chars max)
+✅ file_path column size (1000 chars)
+✅ Entity length attributes added
+
+
+Known Limitations:
+
+⚠️ Large files (50MB+) timeout on VM hardware
+⚠️ DOCX files parsed as PDF (works but wrong)
+⚠️ Some error messages still generic in UI
+
+
+CLEAN UP ORPHANED DATA:
+bash# Delete orphaned chunks
+=============================================
+CHAOS TESTING - COMPLETE SUMMARY
+PHASE 0: Preparation ✅
+
+Backups created
+Baseline metrics recorded
+Test files created
+
+PHASE 1: Data Quality (9 tests) ✅
+
+Empty files: Rejected ✅
+Corrupted PDFs: Rejected ✅
+Unicode filenames: Accepted ✅
+Long filenames: Accepted ✅
+Special characters: Accepted ✅
+Large files: Timeout on VM hardware ⚠️
+Fake files: Rejected ✅
+
+PHASE 2: Failure Injection (3 tests) ✅
+
+PostgreSQL offline: Expected failure ✅
+Qdrant offline: Graceful handling ✅
+Backend killed mid-upload: Documents stuck in PROCESSING ⚠️
+
+PHASE 3: Drift Detection (2 tests) ✅
+
+DB delete → Qdrant: Cascade works ✅
+Qdrant delete → DB: Creates invisible documents ❌
+
+PHASE 4: Concurrency (2 tests) ✅
+
+Concurrent uploads: Rate limited (correct) ✅
+Concurrent searches: Rate limited (correct) ✅
+
+PHASE 5: Recovery (1 test) ✅
+
+Full restart: All services recover ✅
+
+
+ISSUES FOUND:
+
+⚠️ Large files timeout (hardware limitation)
+⚠️ Stuck PROCESSING documents (backend killed mid-upload)
+❌ No drift detection (manual Qdrant deletes create invisible docs)
+
+
+CONFLUENCE CHAOS TESTING - SESSION COMPLETE
+CRITICAL BUGS FOUND:
+TestBugSeverityImpact
+A.1: Invalid Credentials403 errors marked as "success"🔴 CRITICALSilent failures, no visibility
+A.2: Deleted PagesOrphaned pages not removed🔴 CRITICALStale content in search results
+UI: Sync ButtonNever re-enables after sync🟡 HIGHUsers can't trigger subsequent syncs
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+=========================NOTES =========
+
+Pleaseing :)
+✅ TEST A.6 PASSED - GIANT PAGE HANDLING PERFECT
+
+RESULTS:
+Sync Performance:
+
+✅ 90K character page synced successfully
+✅ 50 chunks created from the giant page
+✅ 14s embedding time (50 chunks × ~280ms each = reasonable)
+✅ Total pages: 14 (13 existing + 1 new giant page)
+
+Search Quality - EXCELLENT:
+Query 1: "artificial intelligence regulation"
+
+✅ 95% confidence - Found EU AI regulation content
+✅ Correct content - Returned regulatory framework info
+✅ Title-independent - Found content despite misleading "Giant Test Page" title
+✅ 1620ms response (914ms LLM generation)
+
+Query 2: "European Union AI policy"
+
+✅ 99% confidence - Even better match
+✅ Accurate answer - Human-centric AI, ecosystem of trust
+✅ 825ms response - Fast retrieval and generation
+✅ Vector search working - Found 20 relevant chunks
+
+
+KEY FINDINGS:
+
+✅ Chunking works well - 90K chars → 50 chunks (~1,800 chars/chunk)
+✅ Embeddings are semantic - Finds "AI regulation" content regardless of page title
+✅ No size limits hit - Large pages process without issues
+✅ Search relevance high - 95-99% confidence on complex queries
+✅ Title doesn't bias search - Content-based retrieval, not title-based
+
+
+TestStatusResult
+A.1: Invalid credentials✅ PASSEDFixed - errors detected
+A.2: Deleted pages✅ PASSEDFixed - cleanup works
+A.3: Permission changes⏭️ SKIPPEDNot applicable
+A.4: Confluence down✅ PASSEDFixed - network errors handled
+A.5: Rate limiting✅ PASSEDNo issues - generous limits
+A.6: Giant pages✅ PASSED90K chars handled perfectly
+A.7: Duplicate titles✅ PASSEDContent-based retrieval works
+
+NEXT: PHASE B - FAILURE INJECTION
+
+
+
+==========RE VISIT=================
+YOU'RE 100% CORRECT - NOW I UNDERSTAND THE CONFUSION.
+
+THE CLARIFICATION:
+There are TWO different HTML sources:
+1. Confluence's HTML wrapper (the page structure)
+html<html>
+  <head>...</head>
+  <body>
+    <div class="wiki-content">
+      <!-- THIS is what .text() strips -->
+      <p>User's content here</p>
+    </div>
+  </body>
+</html>
+2. User's content INSIDE the page
+html<!-- THIS is what the user pasted -->
+<script>alert('xss')</script>
+Normal content here with lots of special characters
+
+WHAT .text() DOES:
+JSoup's .text() method:
+
+✅ Strips Confluence's HTML structure (<div>, <p>, <body>)
+❌ DOES NOT strip user content - it extracts it as-is
+
+So if user pastes <script>alert('xss')</script> in Confluence:
+
+Confluence stores it as content
+.text() extracts: <script>alert('xss')</script> (because that's the TEXT content)
+Gets stored in chunks with script tags intact
+
+
+IS THIS A BUG?
+NO - THIS IS CORRECT BEHAVIOR because:
+
+✅ User intentionally added that content (they pasted it)
+✅ Code examples need preservation (JavaScript books)
+✅ Content should match source (faithful to Confluence)
+
+
+IS THIS A SECURITY RISK?
+ONLY IF:
+
+❌ You expose a raw chunk endpoint without escaping
+❌ You render chunks directly in HTML without sanitization
+❌ Local LLM returns raw content instead of descriptions
+
+SOLUTION:
+
+✅ Never render raw chunk content in HTML
+✅ Always escape if displaying chunks
+✅ Secure any /api/chunks/{id} endpoint with HTML escaping
+
+
+FINAL ANSWER:
+✅ NOT A BUG - Working as designed
+⚠️ SECURITY RECOMMENDATION - Add escaping to any direct chunk display

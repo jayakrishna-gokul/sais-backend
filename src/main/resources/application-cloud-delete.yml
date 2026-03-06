@@ -1,0 +1,59 @@
+# ============================================
+# CLOUD GPU CONFIGURATION
+# ============================================
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/sapphireai
+    username: sapphire
+    password: ${DB_PASSWORD:sapphire123}
+
+  data:
+    redis:
+      repositories:
+        enabled: false
+
+sapphire:
+  # Inference strategy: which provider to use
+  inference:
+    strategy: remote  # Options: fast, quality, remote
+
+    # Fast tier (local Gemma - fallback)
+    fast:
+      enabled: true
+      model: gemma:2b
+
+    # Quality tier (local Mistral - disabled for cloud)
+    quality:
+      enabled: false
+      model: mistral:7b-instruct-q4_0
+
+    # Remote tier (Together.ai GPU)
+    remote:
+      enabled: true
+      api-url: https://api.together.xyz
+      api-key: ${TOGETHER_API_KEY}
+      model: mistralai/Mistral-7B-Instruct-v0.1
+
+    # External tier (OpenAI - optional)
+    external:
+      enabled: false
+      api-key: ${OPENAI_API_KEY:}
+      model: gpt-4o-mini
+
+  # Other settings same as local
+  llm:
+    base-url: http://localhost:11434
+
+  embedding:
+    provider: ollama
+
+  vector:
+    base-url: http://localhost:6334
+
+  document:
+    storage-path: C:/sapphire/documents
+
+logging:
+  level:
+    com.sapphireai: DEBUG

@@ -1,0 +1,56 @@
+[ {
+  "queryId" : "q1",
+  "model" : "mistral:7b-instruct-q4_0",
+  "queryText" : "How many vacation days do employees get?",
+  "answer" : null,
+  "latencyMs" : 30080,
+  "inputTokens" : 0,
+  "outputTokens" : 0,
+  "success" : false,
+  "errorMessage" : "request timed out",
+  "timestamp" : 1766395799437
+}, {
+  "queryId" : "q2",
+  "model" : "mistral:7b-instruct-q4_0",
+  "queryText" : "What is the process for requesting time off?",
+  "answer" : null,
+  "latencyMs" : 30012,
+  "inputTokens" : 0,
+  "outputTokens" : 0,
+  "success" : false,
+  "errorMessage" : "request timed out",
+  "timestamp" : 1766395829463
+}, {
+  "queryId" : "q3",
+  "model" : "mistral:7b-instruct-q4_0",
+  "queryText" : "Can unused vacation days be carried over?",
+  "answer" : null,
+  "latencyMs" : 30398,
+  "inputTokens" : 0,
+  "outputTokens" : 0,
+  "success" : false,
+  "errorMessage" : "request timed out",
+  "timestamp" : 1766395859861
+}, {
+  "queryId" : "q4",
+  "model" : "mistral:7b-instruct-q4_0",
+  "queryText" : "Compare vacation policies for full-time vs part-time employees",
+  "answer" : null,
+  "latencyMs" : 30252,
+  "inputTokens" : 0,
+  "outputTokens" : 0,
+  "success" : false,
+  "errorMessage" : "request timed out",
+  "timestamp" : 1766395890113
+}, {
+  "queryId" : "q5",
+  "model" : "mistral:7b-instruct-q4_0",
+  "queryText" : "Summarize the entire vacation policy",
+  "answer" : null,
+  "latencyMs" : 30004,
+  "inputTokens" : 0,
+  "outputTokens" : 0,
+  "success" : false,
+  "errorMessage" : "request timed out",
+  "timestamp" : 1766395920119
+} ]

@@ -1,0 +1,35 @@
+add scheduled sync service of confluence - cronjob or webhook?
+- remove v9 and v10 as the fix is in code to change lentgth to 1000
+- Test 6 (100MB .bin file):
+  Unsupported file type: application/octet-stream
+  ❌ Should have been rejected for size, not file type
+  Test 7 (99MB fake PDF):
+  Missing root object specification in trailer
+  ❌ Should have been accepted (it's under 100MB), but rejected because it's not a real PDF (created with dd if=/dev/urandom)
+
+-TEST 11 RESULTS: PostgreSQL Offline - CRITICAL VULNERABILITY
+ MetricResultSeverityError
+ detection✅ Detected DB down-Graceful degradation❌ Total failure🔴 CRITICAL
+ User experience❌ 30s timeout, no error🔴 CRITICAL
+ Authentication❌ Completely broken🔴 CRITICAL
+ Auto-recovery❌ Required manual restart🟡 HIGH
+
+
+IS THIS A BUG?
+NO - THIS IS CORRECT BEHAVIOR because:
+
+✅ User intentionally added that content (they pasted it)
+✅ Code examples need preservation (JavaScript books)
+✅ Content should match source (faithful to Confluence)
+IS THIS A SECURITY RISK?
+ONLY IF:
+❌ You expose a raw chunk endpoint without escaping
+❌ You render chunks directly in HTML without sanitization
+❌ Local LLM returns raw content instead of descriptions
+SOLUTION
+✅ Never render raw chunk content in HTML
+✅ Always escape if displaying chunks
+✅ Secure any /api/chunks/{id} endpoint with HTML escapin
+FINAL ANSWER:
+✅ NOT A BUG - Working as designed
+⚠️ SECURITY RECOMMENDATION - Add escaping to any direct chunk display

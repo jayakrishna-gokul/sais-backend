@@ -1,0 +1,181 @@
+PHASE 0: PRE-CHAOS PREPARATION
+Step 1: Complete System Backup
+bashssh sais@192.168.1.4
+
+# 1. Backup PostgreSQL
+pg_dump -U sapphire -h localhost sapphireai > /tmp/sapphire_pre_chaos_$(date +%Y%m%d_%H%M%S).sql
+
+# 2. Record current state
+psql -U sapphire -h localhost -d sapphireai -c "SELECT COUNT(*) FROM processed_document;"
+psql -U sapphire -h localhost -d sapphireai -c "SELECT COUNT(*) FROM document_chunk;"
+psql -U sapphire -h localhost -d sapphireai -c "SELECT COUNT(*) FROM confluence_page;"
+
+# 3. Check Qdrant collection info
+curl http://localhost:6334/collections/sapphire_docs_75b3b443-0a37-4320-9663-deee43eb47d3
+
+# 4. Record disk space BEFORE
+df -h /opt/sapphire
+df -h /var/lib/postgresql
+
+
+Step 2: Create Comprehensive Test Dataset
+bashcd /home/sais/test-docs
+
+# Edge case files
+head -c 5000 hr-policy.pdf > corrupted.pdf
+touch empty.txt
+echo "Testing Unicode: 中文 émojis 🎉 Ñoño" > "unicode-中文-🎉.txt"
+python3 -c 'print("a"*200)' > longname.txt
+echo "test content" > "my file & name (test) [2026].txt"
+
+# Massive file (100MB)
+dd if=/dev/urandom of=massive-100mb.bin bs=1M count=100
+
+# Borderline size file (just under 100MB limit)
+dd if=/dev/urandom of=borderline-99mb.pdf bs=1M count=99
+
+# Invalid file extensions
+echo "not really a pdf" > fake.pdf
+echo "<html><body>fake docx</body></html>" > fake.docx
+
+# List all test files
+ls -lh
+Step 3: Document Baseline Metrics
+bash# System resources
+free -h
+htop  # Take screenshot of current state
+
+# Service status
+sudo systemctl status sapphire-ai
+sudo systemctl status postgresql
+sudo systemctl status qdrant
+
+# Current performance baseline
+curl -X POST http://192.168.1.4/api/search \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"query":"test","topK":5}' \
+  --write-out "\nTime: %{time_total}s\n"
+
+PHASE 1: DATA QUALITY CHAOS (Upload Edge Cases)
+Test Matrix:
+FileExpected ResultActual ResultNotescorrupted.pdfReject with errorempty.txtReject with errorunicode-中文-🎉.txtAccept & processlongname.txt (200 chars)Accept or reject cleanlymy file & name (test).txtAccept & processmassive-100mb.binReject (too large)borderline-99mb.pdfAccept or rejectfake.pdfReject (invalid)fake.docxReject (invalid)
+For EACH file, verify:
+
+✅ Upload succeeds/fails as expected
+✅ Error message is clear and helpful
+✅ No orphaned database records
+✅ No orphaned Qdrant vectors
+✅ System remains stable
+
+
+PHASE 2: FAILURE INJECTION CHAOS
+Test 2.1: Kill PostgreSQL Mid-Upload
+bash# Terminal 1: Upload large file via UI
+# Terminal 2: Kill PostgreSQL mid-upload
+sudo systemctl stop postgresql
+
+# Verify:
+# - Upload fails gracefully
+# - No orphaned chunks in Qdrant
+# - Restart PostgreSQL → system recovers
+Test 2.2: Kill Qdrant Mid-Upload
+bash# Terminal 1: Upload file
+# Terminal 2: Kill Qdrant
+sudo systemctl stop qdrant
+
+# Verify:
+# - Upload fails gracefully
+# - PostgreSQL has no COMPLETED documents without vectors
+# - Restart Qdrant → system recovers
+Test 2.3: Kill Backend Mid-Sync
+bash# Start Confluence sync
+# Kill backend during sync
+sudo systemctl stop sapphire-ai
+
+# Verify:
+# - Partial pages in DB
+# - Sync job status = FAILED or IN_PROGRESS
+# - Restart → can re-sync without duplicates
+Test 2.4: Fill Disk Space
+bash# Create large file to fill disk
+dd if=/dev/zero of=/tmp/fillup.img bs=1M count=5000
+
+# Try uploading → should fail gracefully
+# Remove fillup.img → system recovers
+
+PHASE 3: DRIFT DETECTION CHAOS
+Test 3.1: Manual Database Deletions
+sql-- Delete a document from PostgreSQL but NOT from Qdrant
+DELETE FROM processed_document WHERE id = '<some_id>';
+
+-- Search should NOT return orphaned chunks
+-- Run cleanup job to detect drift
+Test 3.2: Manual Qdrant Deletions
+bash# Delete vectors from Qdrant but NOT from PostgreSQL
+# Document shows as COMPLETED but search doesn't return it
+# Detect and re-index
+Test 3.3: Confluence Content Changes
+bash# Edit a page in Confluence
+# Re-sync
+# Verify: Old content replaced, not duplicated
+
+PHASE 4: CONCURRENCY CHAOS (Load Testing)
+Test 4.1: Concurrent Uploads
+bash# Upload 10 files simultaneously via Postman Collection Runner
+# Verify: All process correctly, no race conditions
+Test 4.2: Concurrent Searches
+bash# 100 concurrent search requests
+# Verify: All return results, no timeouts
+Test 4.3: Upload + Search + Sync Simultaneously
+bash# Terminal 1: Upload file
+# Terminal 2: Search
+# Terminal 3: Confluence sync
+# Verify: All complete successfully
+
+PHASE 5: RECOVERY TESTING
+Test 5.1: Full System Restart
+bashsudo systemctl stop sapphire-ai postgresql qdrant
+sudo systemctl start postgresql qdrant sapphire-ai
+
+# Verify: All services come up clean
+# Search works immediately
+Test 5.2: Restore from Backup
+bash# Restore PostgreSQL backup
+psql -U sapphire -d sapphireai < /tmp/sapphire_pre_chaos_*.sql
+
+# Delete and recreate Qdrant collection
+# Re-sync all documents
+
+HERE'S THE PLAN - DO BOTH:
+TODAY - Finish Critical Document Tests (30 min):
+
+Test 10: Qdrant offline during upload
+Test 11: PostgreSQL offline during upload
+Test 12: Disk full scenario
+
+Why these matter: They test system resilience and cleanup.
+
+THEN - COMPREHENSIVE CONFLUENCE CHAOS TESTING:
+Phase A: Edge Cases
+
+Invalid/expired credentials
+Deleted pages
+Permission changes
+Confluence down during sync
+Rate limiting
+Giant pages
+Duplicate titles
+
+Phase B: Failure Injection
+
+Network timeout mid-sync
+Partial sync failures
+Database failures during sync
+Qdrant offline during sync
+
+Phase C: Data Integrity
+
+Verify chunks match Confluence content
+Verify updates propagate correctly
+Verify deletes clean up properly

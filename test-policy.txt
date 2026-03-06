@@ -1,0 +1,16 @@
+# Create a simple test file:
+
+# Company Vacation Policy
+
+## Overview
+Employees are entitled to 15 days of paid vacation per year.
+
+## Eligibility
+- Full-time employees: 15 days
+- Part-time employees: Prorated based on hours worked
+
+## Requesting Time Off
+Submit requests at least 2 weeks in advance through the HR portal.
+
+## Carryover
+Up to 5 unused days can be carried over to the next year.

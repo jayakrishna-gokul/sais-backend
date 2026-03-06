@@ -1,0 +1,56 @@
+[ {
+  "queryId" : "q1",
+  "model" : "Gemma:2b",
+  "queryText" : "How many vacation days do employees get?",
+  "answer" : "I am unable to access external sources or provide specific information about company vacation policies, so I cannot answer this question from the context.",
+  "latencyMs" : 9991,
+  "inputTokens" : 31,
+  "outputTokens" : 38,
+  "success" : true,
+  "errorMessage" : null,
+  "timestamp" : 1766310319555
+}, {
+  "queryId" : "q2",
+  "model" : "Gemma:2b",
+  "queryText" : "What is the process for requesting time off?",
+  "answer" : "Sure, here is the process for requesting time off according to the company vacation policy:\n\n1. Submit a request in advance, at least two weeks before the desired start date, outlining the purpose and duration of the leave, along with any supporting documentation.\n2. Check the company's employee portal or the designated communication channels to ensure that the request has been received and is within the approval timeline.\n3. If approved, the employee will receive a notification, outlining the approval and the start and end dates of the leave.\n4. The employee must submit a confirmation of acceptance to the manager or supervisor designated by the company.\n5. The employee can then proceed with their leave and adhere to the company's policies and procedures.",
+  "latencyMs" : 21131,
+  "inputTokens" : 32,
+  "outputTokens" : 191,
+  "success" : true,
+  "errorMessage" : null,
+  "timestamp" : 1766310340702
+}, {
+  "queryId" : "q3",
+  "model" : "Gemma:2b",
+  "queryText" : "Can unused vacation days be carried over?",
+  "answer" : "According to the company's vacation policy, unused vacation days may be carried over for a maximum of one year from the end of the fiscal year in which they were accrued.",
+  "latencyMs" : 7242,
+  "inputTokens" : 31,
+  "outputTokens" : 42,
+  "success" : true,
+  "errorMessage" : null,
+  "timestamp" : 1766310347944
+}, {
+  "queryId" : "q4",
+  "model" : "Gemma:2b",
+  "queryText" : "Compare vacation policies for full-time vs part-time employees",
+  "answer" : "Sure, here's a brief comparison of vacation policies for full-time vs part-time employees:\n\n**Full-Time Employees:**\n\n* Full pay for vacation days\n* Longer vacation periods, typically 3-4 weeks per year\n* More generous sick leave policies\n* Eligibility for additional benefits, such as health insurance and paid time off\n\n**Part-Time Employees:**\n\n* Reduced vacation allowances compared to full-time employees\n* Short vacation periods, typically 2-3 weeks per year\n* Limited or no sick leave policies\n* May have limited access to benefits, such as health insurance",
+  "latencyMs" : 19507,
+  "inputTokens" : 36,
+  "outputTokens" : 141,
+  "success" : true,
+  "errorMessage" : null,
+  "timestamp" : 1766310367451
+}, {
+  "queryId" : "q5",
+  "model" : "Gemma:2b",
+  "queryText" : "Summarize the entire vacation policy",
+  "answer" : "I am unable to access external sources or provide summaries of company vacation policies, so I cannot answer this question.",
+  "latencyMs" : 4553,
+  "inputTokens" : 30,
+  "outputTokens" : 30,
+  "success" : true,
+  "errorMessage" : null,
+  "timestamp" : 1766310372004
+} ]

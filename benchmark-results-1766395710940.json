@@ -1,0 +1,56 @@
+[ {
+  "queryId" : "q1",
+  "model" : " mistral:7b-instruct-q4_0",
+  "queryText" : "How many vacation days do employees get?",
+  "answer" : null,
+  "latencyMs" : 106,
+  "inputTokens" : 0,
+  "outputTokens" : 0,
+  "success" : false,
+  "errorMessage" : "model ' mistral:7b-instruct-q4_0' not found",
+  "timestamp" : 1766395710853
+}, {
+  "queryId" : "q2",
+  "model" : " mistral:7b-instruct-q4_0",
+  "queryText" : "What is the process for requesting time off?",
+  "answer" : null,
+  "latencyMs" : 38,
+  "inputTokens" : 0,
+  "outputTokens" : 0,
+  "success" : false,
+  "errorMessage" : "model ' mistral:7b-instruct-q4_0' not found",
+  "timestamp" : 1766395710891
+}, {
+  "queryId" : "q3",
+  "model" : " mistral:7b-instruct-q4_0",
+  "queryText" : "Can unused vacation days be carried over?",
+  "answer" : null,
+  "latencyMs" : 15,
+  "inputTokens" : 0,
+  "outputTokens" : 0,
+  "success" : false,
+  "errorMessage" : "model ' mistral:7b-instruct-q4_0' not found",
+  "timestamp" : 1766395710906
+}, {
+  "queryId" : "q4",
+  "model" : " mistral:7b-instruct-q4_0",
+  "queryText" : "Compare vacation policies for full-time vs part-time employees",
+  "answer" : null,
+  "latencyMs" : 16,
+  "inputTokens" : 0,
+  "outputTokens" : 0,
+  "success" : false,
+  "errorMessage" : "model ' mistral:7b-instruct-q4_0' not found",
+  "timestamp" : 1766395710922
+}, {
+  "queryId" : "q5",
+  "model" : " mistral:7b-instruct-q4_0",
+  "queryText" : "Summarize the entire vacation policy",
+  "answer" : null,
+  "latencyMs" : 18,
+  "inputTokens" : 0,
+  "outputTokens" : 0,
+  "success" : false,
+  "errorMessage" : "model ' mistral:7b-instruct-q4_0' not found",
+  "timestamp" : 1766395710940
+} ]

@@ -1,0 +1,21 @@
+# Build outputs
+target/
+BOOT-INF/
+*.jar
+*.war
+*.class
+
+# Logs
+logs/
+*.log
+*.log.*
+*.gz
+
+# Sensitive
+.env
+application-local.yml
+application-prod.yml
+
+# IDE
+.idea/
+*.iml

@@ -1,0 +1,37 @@
+[
+  {
+    "id": "q1",
+    "query": "How many vacation days do employees get?",
+    "expectedAnswer": "15 days",
+    "type": "FACTUAL",
+    "complexity": "SIMPLE"
+  },
+  {
+    "id": "q2",
+    "query": "What is the process for requesting time off?",
+    "expectedAnswer": "Submit request 2 weeks in advance through HR portal",
+    "type": "PROCEDURAL",
+    "complexity": "MEDIUM"
+  },
+  {
+    "id": "q3",
+    "query": "Can unused vacation days be carried over?",
+    "expectedAnswer": "Up to 5 days can be carried over",
+    "type": "FACTUAL",
+    "complexity": "SIMPLE"
+  },
+  {
+    "id": "q4",
+    "query": "Compare vacation policies for full-time vs part-time employees",
+    "expectedAnswer": "Full-time: 15 days, Part-time: prorated",
+    "type": "COMPARISON",
+    "complexity": "MEDIUM"
+  },
+  {
+    "id": "q5",
+    "query": "Summarize the entire vacation policy",
+    "expectedAnswer": "Overview of all vacation rules",
+    "type": "SUMMARY",
+    "complexity": "COMPLEX"
+  }
+]

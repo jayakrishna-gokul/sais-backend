@@ -1,0 +1,56 @@
+[ {
+  "queryId" : "q1",
+  "model" : "Gemma:mini",
+  "queryText" : "How many vacation days do employees get?",
+  "answer" : null,
+  "latencyMs" : 94,
+  "inputTokens" : 0,
+  "outputTokens" : 0,
+  "success" : false,
+  "errorMessage" : "model 'Gemma:mini' not found",
+  "timestamp" : 1766310119684
+}, {
+  "queryId" : "q2",
+  "model" : "Gemma:mini",
+  "queryText" : "What is the process for requesting time off?",
+  "answer" : null,
+  "latencyMs" : 12,
+  "inputTokens" : 0,
+  "outputTokens" : 0,
+  "success" : false,
+  "errorMessage" : "model 'Gemma:mini' not found",
+  "timestamp" : 1766310119696
+}, {
+  "queryId" : "q3",
+  "model" : "Gemma:mini",
+  "queryText" : "Can unused vacation days be carried over?",
+  "answer" : null,
+  "latencyMs" : 18,
+  "inputTokens" : 0,
+  "outputTokens" : 0,
+  "success" : false,
+  "errorMessage" : "model 'Gemma:mini' not found",
+  "timestamp" : 1766310119714
+}, {
+  "queryId" : "q4",
+  "model" : "Gemma:mini",
+  "queryText" : "Compare vacation policies for full-time vs part-time employees",
+  "answer" : null,
+  "latencyMs" : 19,
+  "inputTokens" : 0,
+  "outputTokens" : 0,
+  "success" : false,
+  "errorMessage" : "model 'Gemma:mini' not found",
+  "timestamp" : 1766310119733
+}, {
+  "queryId" : "q5",
+  "model" : "Gemma:mini",
+  "queryText" : "Summarize the entire vacation policy",
+  "answer" : null,
+  "latencyMs" : 13,
+  "inputTokens" : 0,
+  "outputTokens" : 0,
+  "success" : false,
+  "errorMessage" : "model 'Gemma:mini' not found",
+  "timestamp" : 1766310119747
+} ]
