@@ -1,6 +1,7 @@
 package com.sapphireai.service.llm;
 
 import com.sapphireai.model.entity.DocumentChunk;
+import com.sapphireai.repository.DocumentRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,12 +15,14 @@ import java.util.stream.Collectors;
 public class LlmService {
 
     private final InferenceRouter router;
+    private final DocumentRepository documentRepository;
 
     private String strategy;
 
     @Autowired
-    public LlmService(InferenceRouter router, @Value("${sapphire.inference.strategy:fast-first}") String strategy) {
+    public LlmService(InferenceRouter router, DocumentRepository documentRepository, @Value("${sapphire.inference.strategy:fast-first}") String strategy) {
         this.router = router;
+        this.documentRepository = documentRepository;
         this.strategy = strategy;
         log.info("LlmService initialized with strategy: {}", strategy);
     }
@@ -87,11 +90,16 @@ public class LlmService {
 
     private String buildContext(List<DocumentChunk> chunks) {
         return chunks.stream()
-                .map(chunk -> String.format(
-                        "[Source: %s]\n%s\n",
-                        chunk.getDocumentId(),
-                        chunk.getContent()
-                ))
+                .map(chunk -> {
+                    String docName = documentRepository.findById(chunk.getDocumentId())
+                            .map(doc -> doc.getFileName())
+                            .orElse(chunk.getDocumentId());
+                    return String.format(
+                            "[Source: %s]\n%s\n",
+                            docName,
+                            chunk.getContent()
+                    );
+                })
                 .collect(Collectors.joining("\n---\n\n"));
     }
 
@@ -102,7 +110,7 @@ public class LlmService {
                 INSTRUCTIONS:
                 1. Answer the question using ONLY the information provided in the context below
                 2. If the context doesn't contain enough information, say "I don't have enough information to answer that"
-                3. Cite sources by mentioning the document ID when making specific claims
+                3. Cite sources by mentioning the document name when making specific claims
                 4. Be concise but complete
                 5. Use professional, clear language
                 
