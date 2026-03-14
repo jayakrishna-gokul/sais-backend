@@ -44,6 +44,9 @@ public class User {
 
     private LocalDateTime updatedAt;
 
+    @Column(name = "must_change_password")
+    private Boolean mustChangePassword = false;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

@@ -1,6 +1,7 @@
 package com.sapphireai.service.auth;
 
 import com.sapphireai.model.dto.AuthResponse;
+import com.sapphireai.model.dto.ChangePasswordRequest;
 import com.sapphireai.model.dto.LoginRequest;
 import com.sapphireai.model.dto.RegisterRequest;
 import com.sapphireai.model.entity.Organization;
@@ -73,6 +74,7 @@ public class AuthService {
                 .expiresIn(86400000L)  // 24 hours
                 .userId(user.getId())
                 .email(user.getEmail())
+                .role(user.getRole())
                 .build();
     }
 
@@ -97,6 +99,8 @@ public class AuthService {
                 .expiresIn(86400000L)
                 .userId(user.getId())
                 .email(user.getEmail())
+                .mustChangePassword(user.getMustChangePassword())
+                .role(user.getRole())
                 .build();
     }
 
@@ -109,5 +113,27 @@ public class AuthService {
                 .build();
 
         return organizationRepository.save(org);
+    }
+
+    @Transactional
+    public void changePassword(String email, ChangePasswordRequest request) {
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw new IllegalArgumentException("New passwords do not match");
+        }
+        if (request.getNewPassword().length() < 8) {
+            throw new IllegalArgumentException("Password must be at least 8 characters");
+        }
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("Current password is incorrect");
+        }
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        user.setMustChangePassword(false);
+        userRepository.save(user);
+        log.info("Password changed for user: {}", email);
     }
 }

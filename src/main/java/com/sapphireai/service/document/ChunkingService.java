@@ -96,7 +96,7 @@ public class ChunkingService {
         if (currentChunk.length() > 0) {
             chunks.add(createChunk(currentChunk.toString(), documentId, chunkIndex, "PARAGRAPH"));
         }
-
+        chunks.removeIf(chunk -> chunk.getContent().length() < 50);
         return new ChunkResult(chunks, "SemanticChunking", calculateAverageQuality(chunks));
     }
 
@@ -180,15 +180,13 @@ public class ChunkingService {
                 chunks.add(createChunk(section, documentId, chunkIndex++, "POLICY_CLAUSE"));
             }
         }
-
+        chunks.removeIf(chunk -> chunk.getContent().length() < 50);
         //chunkRepository.saveAll(chunks);
         return new ChunkResult(chunks, "PolicyChunking", calculateAverageQuality(chunks));
     }
 
     private ChunkResult technicalChunking(String content, String documentId) {
         List<DocumentChunk> chunks = new ArrayList<>();
-
-        // Split by steps or numbered lists
         String[] steps = content.split("(?i)(?=Step \\d+|\\d+\\.)");
         int chunkIndex = 0;
 
@@ -196,10 +194,16 @@ public class ChunkingService {
             step = step.trim();
             if (step.isEmpty()) continue;
 
-            chunks.add(createChunk(step, documentId, chunkIndex++, "PROCEDURE_STEP"));
+            if (step.length() > chunkSize * 2) {
+                // Step is too large — split it like a large section
+                List<DocumentChunk> subChunks = splitLargeSection(step, documentId, chunkIndex, "PROCEDURE_STEP");
+                chunks.addAll(subChunks);
+                chunkIndex += subChunks.size();
+            } else {
+                chunks.add(createChunk(step, documentId, chunkIndex++, "PROCEDURE_STEP"));
+            }
         }
-
-        //chunkRepository.saveAll(chunks);
+        chunks.removeIf(chunk -> chunk.getContent().length() < 50);
         return new ChunkResult(chunks, "TechnicalChunking", calculateAverageQuality(chunks));
     }
 
@@ -215,23 +219,34 @@ public class ChunkingService {
             sentence = sentence.trim();
             if (sentence.isEmpty()) continue;
 
-            // If adding sentence exceeds max, save current chunk
-            if (currentChunk.length() + sentence.length() + 1 > maxChunkSize && currentChunk.length() > 0) {
-                chunks.add(createChunk(currentChunk.toString().trim(), documentId, startIndex + index++, type));
-                currentChunk = new StringBuilder();
-            }
-
-            // If single sentence too long, force split
+            // If single sentence exceeds max, force split at word boundaries
             if (sentence.length() > maxChunkSize) {
+                // Save current chunk first if exists
                 if (currentChunk.length() > 0) {
                     chunks.add(createChunk(currentChunk.toString().trim(), documentId, startIndex + index++, type));
                     currentChunk = new StringBuilder();
                 }
-                // Add force-split logic here if needed
-                chunks.add(createChunk(sentence.substring(0, maxChunkSize), documentId, startIndex + index++, type));
-                if (sentence.length() > maxChunkSize) {
-                    sentence = sentence.substring(maxChunkSize);
+                // Force split long sentence at word boundaries
+                String[] words = sentence.split("\\s+");
+                StringBuilder forcedChunk = new StringBuilder();
+                for (String word : words) {
+                    if (forcedChunk.length() + word.length() + 1 > maxChunkSize) {
+                        chunks.add(createChunk(forcedChunk.toString().trim(), documentId, startIndex + index++, type));
+                        forcedChunk = new StringBuilder(word).append(" ");
+                    } else {
+                        forcedChunk.append(word).append(" ");
+                    }
                 }
+                if (forcedChunk.length() > 0) {
+                    chunks.add(createChunk(forcedChunk.toString().trim(), documentId, startIndex + index++, type));
+                }
+                continue; // ← skip the append below, already handled
+            }
+
+            // If adding sentence exceeds max, save current chunk
+            if (currentChunk.length() + sentence.length() + 1 > maxChunkSize && currentChunk.length() > 0) {
+                chunks.add(createChunk(currentChunk.toString().trim(), documentId, startIndex + index++, type));
+                currentChunk = new StringBuilder();
             }
 
             currentChunk.append(sentence).append(" ");

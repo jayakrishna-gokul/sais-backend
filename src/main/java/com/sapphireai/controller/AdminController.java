@@ -1,5 +1,6 @@
 package com.sapphireai.controller;
 
+import com.sapphireai.model.dto.CreateUserRequest;
 import com.sapphireai.model.entity.User;
 import com.sapphireai.model.dto.AdminStatsResponse;
 import com.sapphireai.repository.UserRepository;
@@ -12,6 +13,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import java.util.UUID;
 
 import java.util.Map;
 
@@ -25,6 +31,7 @@ public class AdminController {
     private final JdbcTemplate jdbcTemplate;
     private final AdminStatsService adminStatsService;
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @PostMapping("/reset-vectors")
     public ResponseEntity<String> resetVectors() {
@@ -105,5 +112,113 @@ public class AdminController {
 
         AdminStatsResponse stats = adminStatsService.getStats(user.getOrganizationId());
         return ResponseEntity.ok(stats);
+    }
+
+    @GetMapping("/users")
+    public ResponseEntity<?> listUsers(
+            Authentication authentication,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        User admin = userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (!"ADMIN".equals(admin.getRole())) {
+            return ResponseEntity.status(403).body("Admin access required");
+        }
+
+        Page<User> users = userRepository.findByOrganizationId(
+                admin.getOrganizationId(),
+                PageRequest.of(page, size, Sort.by("createdAt").descending())
+        );
+
+        return ResponseEntity.ok(users.map(u -> Map.of(
+                "id", u.getId(),
+                "email", u.getEmail(),
+                "fullName", u.getFullName() != null ? u.getFullName() : "",
+                "role", u.getRole(),
+                "enabled", u.getEnabled(),
+                "mustChangePassword", u.getMustChangePassword() != null ? u.getMustChangePassword() : false,
+                "createdAt", u.getCreatedAt().toString()
+        )));
+    }
+
+    @PostMapping("/users")
+    public ResponseEntity<?> createUser(
+            @RequestBody CreateUserRequest request,
+            Authentication authentication
+    ) {
+        User admin = userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (!"ADMIN".equals(admin.getRole())) {
+            return ResponseEntity.status(403).body("Admin access required");
+        }
+
+        if (userRepository.existsByEmail(request.getEmail())) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Email already registered"));
+        }
+
+        // Generate temp password
+        String tempPassword = generateTempPassword();
+
+        User newUser = User.builder()
+                .id(UUID.randomUUID().toString())
+                .email(request.getEmail())
+                .password(passwordEncoder.encode(tempPassword))
+                .fullName(request.getFullName())
+                .organizationId(admin.getOrganizationId())
+                .role(request.getRole() != null ? request.getRole() : "USER")
+                .enabled(true)
+                .mustChangePassword(true)
+                .build();
+
+        userRepository.save(newUser);
+        log.info("Admin {} created user: {}", admin.getEmail(), request.getEmail());
+
+        return ResponseEntity.ok(Map.of(
+                "id", newUser.getId(),
+                "email", newUser.getEmail(),
+                "tempPassword", tempPassword,
+                "message", "User created. Share the temporary password with the user."
+        ));
+    }
+
+    @DeleteMapping("/users/{userId}")
+    public ResponseEntity<?> deleteUser(
+            @PathVariable String userId,
+            Authentication authentication
+    ) {
+        User admin = userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (!"ADMIN".equals(admin.getRole())) {
+            return ResponseEntity.status(403).body("Admin access required");
+        }
+
+        User targetUser = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (!targetUser.getOrganizationId().equals(admin.getOrganizationId())) {
+            return ResponseEntity.status(403).body("Cannot delete users from another organization");
+        }
+
+        if (targetUser.getEmail().equals(admin.getEmail())) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Cannot delete your own account"));
+        }
+
+        userRepository.delete(targetUser);
+        log.info("Admin {} deleted user: {}", admin.getEmail(), targetUser.getEmail());
+        return ResponseEntity.noContent().build();
+    }
+
+    private String generateTempPassword() {
+        String chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+        StringBuilder sb = new StringBuilder();
+        java.util.Random random = new java.util.Random();
+        for (int i = 0; i < 10; i++) {
+            sb.append(chars.charAt(random.nextInt(chars.length())));
+        }
+        return sb.toString();
     }
 }

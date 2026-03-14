@@ -33,3 +33,170 @@ SOLUTION
 FINAL ANSWER:
 ✅ NOT A BUG - Working as designed
 ⚠️ SECURITY RECOMMENDATION - Add escaping to any direct chunk display
+
+
+ITEM N:
+The one remaining issue to fix is the async upload — the 504 timeout on large files. The backend processes successfully but nginx drops the connection before it finishes. This needs:
+
+Upload endpoint returns documentId + PROCESSING status immediately
+Backend processes in a background thread
+Client polls /api/documents/{id}/status for completion
+COMPLETED. 2171 chunks, 360 seconds (6 minutes). The processing worked perfectly — nginx just timed out waiting for the response.
+So the actual issue is the upload endpoint is synchronous — it holds the HTTP connection open until processing finishes. For a 9MB PDF with 2171 chunks that's 6 minutes, which exceeds nginx's timeout.
+The fix is making document upload asynchronous — return a documentId immediately with status PROCESSING, let the backend process in the background, client polls for completion.
+This is the right architecture anyway for an enterprise product. Before we build that — do you want to first verify the full RAG pipeline works end to end? Run a search against the uploaded document:
+FIX:
+Here's the complete async upload implementation — minimal changes, nothing broken.
+
+Change 1 — DocumentProcessingService.java
+Split processDocument into two methods. The first does validation + file save + DB record creation synchronously and returns immediately. The second does the heavy lifting asynchronously.
+Replace the entire processDocument method with these two:
+javapublic ProcessedDocument processDocument(
+        MultipartFile file,
+        String userId,
+        String organizationId
+) {
+    // Validation
+    if (file.isEmpty() || file.getSize() == 0) {
+        throw new IllegalArgumentException("File is empty. Please upload a file with content.");
+    }
+    if (file.getSize() >= MAX_FILE_SIZE_BYTES) {
+        throw new IllegalArgumentException("File too large. Maximum size is 100MB, your file is " +
+                (file.getSize() / 1024 / 1024) + "MB");
+    }
+    String filename = file.getOriginalFilename();
+    if (filename != null && filename.length() > MAX_ORIGINAL_FILENAME_LENGTH) {
+        throw new IllegalArgumentException(
+                "Filename too long. Maximum " + MAX_ORIGINAL_FILENAME_LENGTH +
+                " characters allowed, your filename is " + filename.length() + " characters.");
+    }
+
+    // Create document record immediately
+    ProcessedDocument document = ProcessedDocument.builder()
+            .id(UUID.randomUUID().toString())
+            .userId(userId)
+            .organizationId(organizationId)
+            .fileName(file.getOriginalFilename())
+            .contentType(file.getContentType())
+            .fileSize(file.getSize())
+            .status(ProcessingStatus.PROCESSING)
+            .uploadedAt(LocalDateTime.now())
+            .build();
+    documentRepository.save(document);
+
+    // Save file to disk synchronously (needed before async handoff)
+    String filePath;
+    try {
+        filePath = saveFile(file, document.getId());
+        document.setFilePath(filePath);
+        documentRepository.save(document);
+    } catch (Exception e) {
+        documentRepository.delete(document);
+        throw new RuntimeException("Failed to save file: " + e.getMessage(), e);
+    }
+
+    // Hand off to async processing - returns immediately
+    processDocumentAsync(document.getId(), filePath, organizationId);
+
+    return document;
+}
+
+@Async("documentProcessingExecutor")
+public void processDocumentAsync(String docId, String filePath, String organizationId) {
+    long startTime = System.currentTimeMillis();
+    List<DocumentChunk> chunks = null;
+    boolean vectorsIndexed = false;
+
+    ProcessedDocument document = documentRepository.findById(docId)
+            .orElseThrow(() -> new RuntimeException("Document not found: " + docId));
+
+    try {
+        // Extract text
+        String text = extractText(new File(filePath));
+
+        // Detect type
+        DocumentType type = detectDocumentType(text, document.getFileName());
+        double confidence = calculateDetectionConfidence(text, type);
+        document.setDocumentType(type);
+        document.setDetectionConfidence(confidence);
+
+        // Chunk
+        var chunkResult = chunkingService.createChunks(text, type, docId);
+        chunks = chunkResult.getChunks();
+
+        document.setTotalChunks(chunks.size());
+        document.setChunkingStrategy(chunkResult.getStrategy());
+        document.setQualityScore(chunkResult.getAverageQuality());
+        documentRepository.save(document);
+
+        chunkRepository.saveAll(chunks);
+
+        // Embed and index
+        embeddingService.embedChunks(chunks);
+        vectorStoreService.indexChunks(chunks, organizationId);
+        vectorsIndexed = true;
+
+        // Complete
+        document.setStatus(ProcessingStatus.COMPLETED);
+        document.setProcessingTimeMs(System.currentTimeMillis() - startTime);
+        document.setRequiresReview(confidence < 0.6 || chunkResult.getAverageQuality() < 0.7);
+        documentRepository.save(document);
+
+        log.info("Document processed successfully: {} ({} chunks, {}ms)",
+                docId, chunks.size(), document.getProcessingTimeMs());
+
+    } catch (Exception e) {
+        log.error("Async document processing failed: {}", docId, e);
+        cleanup(document, filePath, chunks, vectorsIndexed);
+        try {
+            documentRepository.delete(document);
+        } catch (Exception deleteError) {
+            log.error("Failed to delete document after async failure", deleteError);
+        }
+    }
+}
+
+Change 2 — DocumentController.java
+The controller already says "Processing in background" — it just needs the response message updated to be accurate:
+java// CHANGE THIS:
+.estimatedProcessingTime("Processing in background")
+
+// TO THIS:
+.estimatedProcessingTime("Document uploaded successfully. Processing in background - check status via GET /api/documents/" + doc.getId())
+That's the only change needed in the controller — it already returns immediately after processDocument().
+
+Change 3 — Add async config class
+Create new file AsyncConfig.java:
+javapackage com.sapphireai.config;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import java.util.concurrent.Executor;
+
+@Configuration
+@EnableAsync
+public class AsyncConfig {
+
+    @Bean(name = "documentProcessingExecutor")
+    public Executor documentProcessingExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(2);
+        executor.setMaxPoolSize(4);
+        executor.setQueueCapacity(10);
+        executor.setThreadNamePrefix("doc-processing-");
+        executor.setWaitForTasksToCompleteOnShutdown(true);
+        executor.setAwaitTerminationSeconds(300);
+        executor.initialize();
+        return executor;
+    }
+}
+
+Summary of what changes and what doesn't:
+
+processDocumentContent() (used by Confluence) — untouched
+deleteDocument() — untouched
+All chunking, embedding, cleanup logic — untouched
+Only processDocument() is split into sync init + async processing
+The async change is not mandatory for client delivery. It becomes mandatory when you have multiple concurrent users uploading large files simultaneously and the thread pool gets exhausted. For a pilot, it's not there yet.

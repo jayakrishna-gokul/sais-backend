@@ -85,7 +85,7 @@ public class EmbeddingService {
      * Generate embedding with automatic fallback.
      * Cached to avoid redundant computation.
      */
-    @Cacheable(value = "embeddings", key = "#text", unless = "#result == null")
+    //@Cacheable(value = "embeddings", key = "#text", unless = "#result == null")
     public float[] generateEmbedding(String text) {
         return embeddingTimer.record(() -> {
             try {
@@ -141,7 +141,7 @@ public class EmbeddingService {
             // Store embedding in chunk for indexing
             chunk.setEmbedding(embedding);
             // Store embedding dimension for validation
-            chunk.setTokenCount(embedding.length);
+            //chunk.setTokenCount(embedding.length);
         }
 
         log.info("Completed embedding {} chunks", chunks.size());

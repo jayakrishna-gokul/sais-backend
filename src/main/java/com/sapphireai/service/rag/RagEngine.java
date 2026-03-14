@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import com.sapphireai.repository.DocumentRepository;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -28,6 +29,7 @@ public class RagEngine {
     private final VectorStoreService vectorStore;
     private final ChunkRepository chunkRepository;
     private final LlmService llmService;
+    private final DocumentRepository documentRepository;
 
     @Value("${sapphire.rag.top-k:20}")
     private int topK;
@@ -219,10 +221,14 @@ public class RagEngine {
     }
 
     private SearchResultDto toSearchResult(DocumentChunk chunk) {
+        String documentName = documentRepository.findById(chunk.getDocumentId())
+                .map(doc -> doc.getFileName())
+                .orElse("Document");
+
         return SearchResultDto.builder()
                 .chunkId(chunk.getId())
                 .documentId(chunk.getDocumentId())
-                .documentName("Document")  // Could fetch from document table
+                .documentName(documentName)
                 .content(chunk.getContent())
                 .relevanceScore(chunk.getRelevanceScore())
                 .chunkType(chunk.getChunkType())
