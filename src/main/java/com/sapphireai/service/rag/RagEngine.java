@@ -77,7 +77,14 @@ public class RagEngine {
 
             // STEP 3: Re-rank (simple scoring for now, can add cross-encoder later)
             List<DocumentChunk> reranked = rerank(chunks, request.getQuery());
-            List<DocumentChunk> topChunks = reranked.subList(0, Math.min(rerankTopK, reranked.size()));
+            double minRelevanceScore = 0.35;
+            List<DocumentChunk> filteredChunks = reranked.stream()
+                    .filter(c -> c.getRelevanceScore() != null && c.getRelevanceScore() >= minRelevanceScore)
+                    .collect(Collectors.toList());
+
+            // Fall back to top chunks if filter removes everything
+            List<DocumentChunk> candidateChunks = filteredChunks.isEmpty() ? reranked : filteredChunks;
+            List<DocumentChunk> topChunks = candidateChunks.subList(0, Math.min(rerankTopK, candidateChunks.size()));
 
             // STEP 4: Expand context (retrieve parent chunks if available)
             List<DocumentChunk> expandedChunks = expandContext(topChunks);

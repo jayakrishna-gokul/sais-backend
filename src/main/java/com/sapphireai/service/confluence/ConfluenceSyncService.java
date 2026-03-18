@@ -689,7 +689,7 @@ public class ConfluenceSyncService {
                         .id(documentId)
                         .userId(ConfluenceConstants.CONFLUENCE_SYNC_USER_ID)
                         .organizationId(connection.getOrganizationId())
-                        .fileName(page.getTitle() + ".html")
+                        .fileName(page.getTitle())
                         .contentType(ConfluenceConstants.CONTENT_TYPE_HTML)
                         .fileSize((long) plainText.length())
                         .documentType(DocumentType.GENERAL)
