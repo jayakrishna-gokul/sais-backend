@@ -1,18 +1,18 @@
 # Sapphire AI Service
 
 Enterprise RAG Knowledge Search Engine with 91% accuracy target.
-This is the line you never deviate from:
+
 
 “Sapphire keeps all documents, embeddings, vectors, and retrieval fully on your infrastructure.
 For answer generation, we currently support a SOC2-compliant inference API for fast deployment.
 For customers with strict compliance needs, the same system runs fully on-prem with a local LLM — no architectural changes required.”
-You are not saying:
+not saying:
 
 “Zero external calls” ❌
 
 “100% on-prem today” ❌
 
-You are saying:
+saying:
 
 “You own your data, not us” ✅
 
